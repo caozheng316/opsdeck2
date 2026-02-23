@@ -1,0 +1,239 @@
+<think>**Initiating PDF Analysis**
+
+I'm currently focused on analyzing the request. My primary goal is to organize all textual data extracted from the PDF attachment, which I'm processing as screenshots and OCR output. The challenge lies in structuring this information effectively for further manipulation.
+
+
+**Refining Page Extraction**
+
+I'm now diving into the specifics of the 16-page travel itinerary PDF. I'm carefully examining each page's content, starting with the cover and introduction. My focus is on accurate transcription and identifying key highlights and attractions, particularly in the Mt. Emei section. I'm paying close attention to any typos or potential inconsistencies in the text. I'm ensuring I'm understanding the travel details accurately before proceeding.
+
+
+**Analyzing Itinerary Highlights**
+
+I'm presently focusing on the itinerary's key highlights. I've now processed Leshan Giant Buddha, Dujiangyan Guanxian, Dujiangyan Panda Park, and Kuanzhai Alley. I'm noting specific details like the "4-diamond" hotel classification mentioned across pages, and am currently parsing the food section with particular attention to potential discrepancies between image and text regarding beef and other dishes. My goal is to synthesize the information into concise, useful summaries.
+
+
+**Mapping Itinerary Details**
+
+I'm now fully immersed in the detailed itinerary, specifically focusing on Days 3 through 6 as laid out on pages 13, 14, and 15. I've broken down each day's activities, including Golden Summit, jewelry center, Tibetan culture, Shu culture, Panda Park, and Kuanzhai Alley. I've also noted meal specifics and the listed hotels. I am carefully cataloging any associated fees like the earpiece fee for the Leshan Giant Buddha and cart fees for Panda Park. I also want to make sure I get that interesting "Blue Tears" mention from Day 4.
+
+
+**Clarifying Itinerary Exclusions**
+
+I'm now focusing on the itinerary's exclusions and tips. I've compiled a comprehensive list of what's *not* covered, including details for Kuanzhai Alley (Day 5), airport drop-off (Day 6), standard inclusions for Reception, and mandatory self-pay items like cable cars. I've also processed page 16, which covers key travel tips and important conditions. Furthermore, I've started checking for OCR errors, correcting punctuation, and ensuring consistent style.
+
+
+**Adjusting OCR Output**
+
+I'm presently revising the OCR output for accuracy, paying close attention to nuanced Chinese terms. Specifically, I'm addressing potential errors with "蜀工文化馆" and clarifying the meaning of "会员无法接待". I've confirmed that the "会员" reference is likely from a travel club context.  I'm also conducting a thorough typo check, focusing on items like the earpiece fees and ensuring correct sentence structure. I'm focusing on consistency and flow as I move from raw data to a draft structure.
+
+
+**Outlining the Structure**
+
+I'm now focusing on organizing the extracted information into distinct sections. I've defined the key areas: accommodation, service, itinerary, reception standards, cost exclusions, and travel tips. I'm also working on refining the output, starting with the title and introductory text. My priority is linking the text where pages split paragraphs.  I'm currently addressing the continuity of Day 3, 4 and 5 descriptions across pages and fixing the OCR errors, paying particular attention to age-related details in the exclusions list.
+
+
+**Completing Output Preparation**
+
+I'm now putting the final touches on the output, ensuring it's ready for generation. I've double-checked the structure to match the initial plan, confirming headings, bullet points, and general readability. I've also re-examined the text extraction, particularly focusing on "会员无法接待", the "天工开物" mention, and the exclusions' total cost. I'm satisfied with the fidelity of the final draft. I'm almost ready to translate it into a concise response.
+
+
+**Synthesizing Key Findings**
+
+I've completed my final review of the structure, ensuring a logical flow from itinerary details to exclusions and tips. I've rechecked all crucial aspects, including "会员无法接待", the mentioned "天工开物" and total cost estimates. The overall outline is now solid, and I'm prepared to articulate the key insights and findings into a well-organized response. I'm focusing on crafting a very clear, easy to read and understand summary.
+
+
+</think>
+
+你好！我已经为你整理了附件 PDF 中的所有文字信息。
+
+我根据文档的逻辑顺序（封面主题、行程亮点、食宿标准、简易行程、详细行程、接待标准及注意事项）进行了排版，修正了部分标点符号和OCR识别产生的错别字，同时严格保持了原文的结构和内容。
+
+以下是整理后的完整文档内容：
+
+---
+
+# 秘境峨眉——VIP贵宾定制 祈福6日游
+
+**——踏云而上，遇见流动的青绿画卷——**
+
+### 核心景点
+◎ 峨眉山金顶 + 乐山大佛
+◎ 灌县古城 + 都江堰蓝眼泪夜景
+◎ 熊猫乐园 + 宽窄巷子
+
+---
+
+## 【四川印象：开启您的祈福之旅】
+
+**四川 SICHUAN**
+一场藏在青山云海间的修行，禅意入心，触摸千年的文化肌理。
+
+一提到四川，脑海里便浮现出一幅立体的画卷：青城山下的晨雾、锦江边的茶馆、九寨沟的海子、火锅里翻滚的红油…… 这片被造物主偏爱的土地，既有山川湖海的壮阔，又有烟火人间的温情，每一处风景都藏着让人沉醉的理由，每一种滋味都刻着独有的川式浪漫。
+山水入画，邂逅自然的鬼斧神工。
+
+---
+
+## 【网红打卡景点】
+带你深入云南（注：原文此处为“深入云南”，可能是原海报文案模板错误，但根据“不改内容”原则予以保留，实际行程为四川），感受蓝天白云，精华景点全覆盖。
+
+### 1. 峨眉山风景区 (The Mt. Emei Scenic Spots)
+国家5A级景区，中国最美十大名山之一。
+峨眉山的血脉里仍然流淌着道之源、佛之始、儒之境三教深厚文化之遗韵。
+
+### 2. 峨眉山报国寺 (Baoguo Temple On Mount Emei)
+报国寺体现了三教文化的交融，寺里供奉着佛教普贤菩萨、道教广成子、儒教楚狂接舆的牌位，反映了明、清时期儒、释、道融洽的历史。
+
+### 3. 乐山大佛风景区 (Leshan Giant Buddha Scenic Area)
+国家5A级景区，中国四大石佛之一，世界上最高的石刻佛像。
+山水为依，文化为魂，经历了上千年的风吹日晒，雨水侵蚀，洪水泛滥，大佛依然屹立于三江畔。
+
+### 4. 都江堰灌县古城 (Dujiangyan Irrigation Project Guanxian Ancient City)
+世界水文化旅游古城，一座与千年古堰相伴的古城，一座景城一体的古城，一座品味生活的古城。是自然风光和人文历史兼具的一座宝藏小城。
+
+### 5. 都江堰熊猫乐园 (Dujiangyan Irrigation Project Panda Park)
+四川作为大熊猫的故乡，都江堰处于大熊猫栖息地世界遗产区域，拥有适宜大熊猫生活的气候和自然环境。世界上唯一的大熊猫救护与疾病防控研究的专业机构，这里可以看到泰山、华星、华美、盼盼等网红熊猫。
+
+### 6. 宽窄巷子 (Kuanzhai Alley)
+宽窄巷子既有南方川西民居的特色，也有北方满蒙文化的内涵，把老成都的气质挥洒的淋漓尽致，是来成都旅游的小伙伴必去的地方之一。
+
+---
+
+## 【行程配置】
+
+### 品质入住 让您一路好睡眠
+全程携程4钻酒店，让您的旅途更舒适，更品质。
+*   2晚成都·携程4钻
+*   2晚峨眉山·携程4钻
+*   1晚都江堰·携程4钻
+
+**参考酒店图片展示：**
+（包括成都江河汇酒店、皓天国泰酒店、峨眉山柏隐温泉智能酒店、都江堰木庭酒店等同级）
+
+### 地道美食 品味舌尖四川
+精选当地特色美食：
+*   跷脚牛肉 / 正宗四川老火锅
+*   新派川菜 / 土灶柴火鸡
+
+### 定制服务 优质待遇
+VIP体验，让尊贵和独一无二感全程体现。
+*   **暖心准备 舒心旅程：** 接机送机，旅途更安心。
+*   **定制服务：** 品质之旅，金牌导游，全程旅游管家24小时服务。
+*   **舒适交通：** 专业车队 + 舒适空调旅游车，每人确保正座。
+
+---
+
+## 【简易行程】
+
+*   **第01天：** 各地出发 -- 抵达成都 -- 入住酒店
+    *   用餐：自理
+    *   住宿：成都
+*   **第02天：** 成都 -- 乐山大佛 -- 峨眉山报国寺
+    *   用餐：早/中/晚
+    *   住宿：峨眉
+*   **第03天：** 峨眉山金顶景区
+    *   用餐：早/中/晚
+    *   住宿：峨眉
+*   **第04天：** 天工开物（藏文化体验馆）-- 灌县古城 -- 都江堰蓝眼泪夜景
+    *   用餐：早/中/晚
+    *   住宿：都江堰
+*   **第05天：** 蜀工文化馆 -- 熊猫乐园 -- 藏医馆 -- 成都 -- 宽窄巷子
+    *   用餐：早/中/晚
+    *   住宿：成都
+*   **第06天：** 成都送机 -- 返回温馨家园
+    *   用餐：早
+    *   住宿：温馨的家
+
+---
+
+## 【详细行程】
+
+### 第一天：各地出发 -- 抵达成都 -- 入住酒店
+各地乘机前往成都，抵达机场后安排专门接机工作人员接机，入住酒店休息。（第一天无行程安排，外出自由活动请注意安全。）
+*   **早餐：** 敬请自理
+*   **中餐：** 敬请自理
+*   **晚餐：** 敬请自理
+*   **酒店：** 成都江河汇酒店、皓天国泰酒店或同级酒店
+
+### 第二天：成都 -- 乐山大佛 -- 峨眉山报国寺
+早餐后乘车前往乐山（车程约2小时），抵达后游览**【乐山大佛】**（乐山耳麦10元/人自理），乐山大佛又名凌云大佛，位于四川省乐山市南岷江东岸凌云寺侧，濒大渡河、青衣江和岷江三江汇流处。大佛为弥勒佛坐像，通高71米，有“山是一尊佛，佛是一座山”之称，是世界上最大的石刻大佛。乐山大佛开凿于唐代开元元年(713年)，完成于贞元十九年(803年)，历时约九十年。乐山大佛和凌云山、乌尤山、巨形卧佛等景点组成的乐山大佛景区属于国家5A级旅游景区，是闻名遐迩的风景旅游胜地。古有“上朝峨眉、下朝凌云”之说。
+中餐后前往**【峨眉山报国寺】**，峨眉山报国寺位于峨眉山麓，海拔551米，是峨眉山的第一座寺庙、峨眉山佛教协会所在地，是峨眉山佛教活动的中心。其原址在伏虎寺对岸的瑜伽河畔，始建于明万历年间（1573—1619），原名会宗堂，清初迁建于此，顺治九年重建；康熙四十二年（公元1703年），康熙皇帝取佛经“四恩四报”中“报国主恩”之意，御题“报国寺”匾额，王藩手书；报国寺历史上经过数次修葺，寺院得以完整保存，报国寺坐西向东，朝迎旭日，晚送落霞。前对凤凰堡，后倚凤凰坪，左濒凤凰湖，右挽来凤亭，恰似一只美丽、吉祥，朝阳欲飞的金凤凰。山门前有一对明代雕刻的石狮，造型生动，威武雄壮，就象左右门卫，守护着这座名山宝刹。
+晚餐享受四川鸳鸯火锅。
+*   **早餐：** 酒店含早
+*   **午餐：** 当地风味餐
+*   **晚餐：** 四川鸳鸯火锅
+*   **酒店：** 峨眉山柏隐温泉智能酒店、熊猫王子酒店或同级酒店
+
+### 第三天：峨眉山金顶景区
+早餐后乘车前往**【峨眉山金顶景区】**（金顶索道往返120元/人、峨眉山观光车90元/人、峨眉山景区猴区保险+耳麦35元/人，均需自理），峨眉山金顶是峨眉山主峰，海拔约3077米，是峨眉山景点和寺庙的汇集地，也是峨眉山奇景最集中的地方。
+金顶是峨眉山的山顶，金顶上的四面十方普贤菩萨金像，是众多游客来峨眉山的必体验之地，这是一座铜铸镏金工艺佛像造像，通高48米，总重量达660吨，是普贤菩萨的第一个四面十方艺术造型，也是世界上最高的金佛。这里海拔3079米，除了高达48米的铜制十方普贤像外，金顶还有一座华严寺，可供祈福。普贤菩萨像后边的华严寺有三座大殿，其中的第三殿是普贤殿，也叫金殿或者“金顶”，是峨眉山较高的殿堂，殿门的匾额有“金顶”、“行愿无尽”、“华藏庄严”等牌匾，殿内供奉“普贤骑象”的铜像。
+享用特色午餐“峨眉三绝”。
+金顶有日出、云海、佛光、圣灯四大奇观。日出时，红日从云海中喷薄而出，霞光万丈；云海由低云组成，随山风聚散，变幻出各种形态；佛光通常在下午2点到4点出现，阳光照射云雾表面形成彩虹般的光环，人影会出现在光环中；圣灯则是在无月的黑夜，舍身岩下出现的飘浮绿色光团，似繁星闪烁。不到金顶等于没有到峨眉山，到金顶不拜金佛是一生的遗憾。
+晚餐后入住酒店休息。
+*   **早餐：** 酒店含早
+*   **午餐：** 峨眉三绝
+*   **晚餐：** 特色餐
+*   **酒店：** 峨眉山柏隐温泉智能酒店、熊猫王子酒店或同级酒店
+
+### 第四天：天工开物 -- 藏文化体验馆 -- 灌县古城 -- 都江堰蓝眼泪夜景
+早餐后乘车前往**【天工开物珠宝展示中心】**（参观时间约120-150分钟）一座以佛教文化及水晶文化展示为主线的大型博物馆。
+中餐享用当地特色风味餐，后参观**【藏文化体验馆】**（游览时间约120分钟）。
+后前往**【灌县古城】**，灌县，四川省旧县名，被誉为“山水入怀、生活道场”的灌县古城，以厚重的文化积淀、特有的风土人情和浪漫的生活情调吸引四面八方的来客。灌县古城，始建于战国，为秦辖地，是历史上成都地区与西部民族地区物资集散地、商旅驿站和茶马古道的起点。史料记载，清代至民国时期，阿坝州等出产的山货药草主要在此集散贸易，本地特产、手工艺品、生活用品等也在此交换，素有“搬不空的灌县，填不满的松潘”。古城内原有东、南、西、北四座城门和砖石城墙相连，城内有大小街道14条，巷子6条。虽街道与巷子相连，但灌县的古城没有十字街口，且大街小巷全部是相连而不相交，形成错落。现虽不能亲眼所见当时的盛景，但在古城区内有不少雕塑、壁画都展现了旧时古城区的生活场景。
+晚餐后前往**【都江堰南桥】**，都江堰南桥的夜景被誉为“水上画楼”，桥下岷江水中，灯光映照出类似**“蓝眼泪”**的梦幻光影，如同流动的蓝色丝带在水中舞动，江水泛着粼粼波光，桥身倒影与光影交融，仿佛银河淌在江面，桥头周边的古镇小吃街热闹非凡，烟火气与夜景的浪漫氛围相互交织。
+*   **早餐：** 酒店含早
+*   **午餐：** 当地风味餐
+*   **晚餐：** 特色餐
+*   **酒店：** 都江堰木庭酒店、明智上春假日酒店或同级酒店
+
+### 第五天：蜀工文化馆 -- 熊猫乐园 -- 藏医药馆 -- 成都 -- 宽窄巷子
+早餐后，参观**【蜀工文化馆】**（游览时间约120-150分钟）可珍藏和选购设计师珍藏品。
+之后前往**【熊猫乐园】**（游览时间约1小时，观光车30元/人客人自理），由中国香港特区政府援建，占地面积760亩，该基地是以大熊猫公众教育，研学体验，旅游观光及大熊猫科研保护为一体的专业机构。园区内竹林婆娑，绿树成荫，步入其中顿觉神清气爽，四川作为大熊猫的故乡，看国宝萌宠逗趣。
+午餐后参观**【藏医药馆】**（游览时间约120分钟）了解中医药知识、老字号产品科普、非遗传统文化展示和传播中医药文化。
+返回成都，晚餐后夜游宽窄巷子。**【宽窄巷子】**位于四川省成都市青羊区少城片区蜀都大道西段，是成都著名的历史文化街区。是清朝少城仅存的遗址。康熙五十七年（1718年），四川提督年羹尧平定准噶尔叛乱后，于成都大城西垣内新筑满城，作为八旗兵集中驻地，宽窄巷子就是其中一部分。辛亥革命后，少城城墙被拆除，兵营逐渐被私宅取代。1981年，宽窄巷子被公布为历史文化保护区，2003年启动主体改造工程，2008年6月14日开街。宽窄巷子由宽巷子、窄巷子和井巷子三条老式街道及其之间的四合院群落组成，包含约70座传统四合院院落，占地约32公顷。这里的建筑既体现了南方川西民居的特色，如青砖墙、高门楼、花墙裙等，又有北方满蒙文化的内涵，是北方胡同文化与川西民居四合院落融为一体的建筑风格在南方城市的“孤本”。这里汇聚了许多文艺小店、咖啡馆和高端餐厅，还有倒立熊猫雕塑等网红打卡点。
+*   **早餐：** 酒店含早
+*   **午餐：** 当地风味餐
+*   **晚餐：** 当地风味餐
+*   **酒店：** 成都江河汇酒店、皓天国泰酒店或同级酒店
+
+### 第六天：成都送机 -- 返回温馨家园
+早餐后根据航班时间安排工作人员送至机场，乘飞机返回温暖的家，结束愉快行程！
+*   **早餐：** 酒店含早
+*   **中餐：** 敬请自理
+*   **晚餐：** 敬请自理
+*   **酒店：** 温暖的家
+
+---
+
+## 【接待标准】
+1.  **酒店：** 精选携程舒适型酒店（2成人1标间/单间，不提供单人单住自然单间，产生单房差费用自理），参考酒店如下：
+    *   成都：成都江河汇酒店、皓天国泰酒店或同级酒店；
+    *   峨眉山：柏隐温泉智能酒店、熊猫王子酒店或同级酒店；
+    *   都江堰：木庭酒店、明智上春假日酒店或同级酒店；
+2.  **用餐：** 5早8正（团队餐40元/人/正，早餐为酒店含早不吃不退；十人一桌；不足10人正餐菜品数量相应减少）。
+3.  **交通：** 空调旅游大巴车，保证每人一正座，不指定座位。
+4.  **门票：** 景区首道大门票，景区景点因个人原因不参加不退任何费用（在不减少景点的情况下，由于交通天气路况等诸多因素导游有权调整景点先后顺序）；
+5.  **儿童标准：** 12岁以下儿童只包含当地旅游车车费、半价餐费，不含景点门票、不含床位费，如超高产生门票及其他费用由家长现付；
+6.  **导游服务：** 行程内持证中文导游服务；
+7.  **保险：** 旅行社责任险+旅游意外险；
+
+## 【费用不含】
+1.  行程中不提供单人单住，参团时发生单房差的客人，又不能拼房的，请按规定补足单房差；
+2.  出团时成人必须携带有效期内身份证原件，12岁以下儿童如无身份证，必须携带户口本原件。
+3.  12周岁(含12岁)以下儿童，包含正餐、大巴车位费；不含景点门票、不占床；
+4.  **景区配套观光电瓶车（费用自理）：**
+    *   峨眉山金顶索道往返 120元/人
+    *   峨眉山观光车 90元/人
+    *   峨眉山景区猴区保险+耳麦 35元/人
+    *   乐山耳麦 10元/人
+    *   都江堰熊猫乐园观光车 30元/人
+    *   **合计：285元/人。**
+
+---
+
+## 【温馨提示】
+5.  出行建议您携带好太阳镜、防晒霜、润肤乳、太阳伞、遮阳帽等物品，出行前关注实时天气预报，准备合适着装，准备一双舒适透气的旅游鞋是必要的选择。
+6.  早餐为酒店房费中提供，若小孩不占床，则须补早餐费，按入住酒店收费规定，由家长现付；
+7.  持有老年证、军官证、学生证等优惠证件的不享受门票优惠政策，无退费；放弃景点游览或用餐的，无退费；自身原因放弃景点游览的，无退费。
+8.  赠送项目发生优惠、免票、自愿放弃、或因航班时间、天气等人力不可抗拒原因导致不能赠送的，不退任何费用。
+9.  因人力不可抗拒因素(自然灾害、交通状况、政府行为等)影响行程，我司可以做出行程调整，尽力确保行程的顺利进行；实在导致无法按照约定的计划执行的，因变更而超出的费用由旅游者承担；行程中的车程时间不包含景点的游览时间；当日景点游览顺序在不影响游程的情况下，我司可调整游览顺序；
+10. 凡患有高危疾病(如心脏病、高血压、癫痫等疾病)、或怀孕、残疾人、大病初愈阶段等会员无法接待，请知晓。

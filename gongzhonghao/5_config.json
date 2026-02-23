@@ -1,0 +1,10 @@
+{
+    "txt_folder": "C:/Users/Administrator/Desktop/公众号文章/txt",
+    "img_folder": "C:/Users/Administrator/Desktop/公众号文章/imgoutput",
+    "output_folder": "C:/Users/Administrator/Desktop/公众号文章/html",
+    "cache_file": "C:/Users/Administrator/Desktop/公众号文章/upload_cache.json",
+    "image_host_url": "https://img.scdn.io/api/v1.php",
+    "upload_interval": 2,
+    "fuzzy_match_length": 15,
+    "max_retries": 5
+}

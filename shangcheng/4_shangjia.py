@@ -152,11 +152,14 @@ def main():
             
             input("请手动登录后按回车键...")
             
-            # 等待页面跳转
-            page.wait_for_load_state("networkidle", timeout=15000)
+            # 等待页面跳转完成
+            page.wait_for_load_state("networkidle", timeout=30000)
+            page.wait_for_timeout(2000)  # 额外等待2秒确保跳转完成
             
-            # 检查是否登录成功
-            if "login" not in page.url.lower():
+            # 检查是否登录成功 - 检查是否到达目标页面
+            current_url = page.url.lower()
+            print(f"当前URL: {page.url}")
+            if "dashboard" in current_url or "login" not in current_url:
                 print("登录成功！")
                 
                 # 保存登录状态

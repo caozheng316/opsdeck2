@@ -93,7 +93,7 @@ SEGMENT_HEIGHT = 10000  # 每段截图的高度像素（固定区间，无重叠
 MAX_SEGMENTS = 100  # 最大分段数限制，防止无限循环
 
 # 默认存储路径配置
-DEFAULT_STORAGE_PATH = r"C:\Users\Administrator\Desktop\野途2"  # 默认存储路径，为空时需要手动输入
+DEFAULT_STORAGE_PATH = r"C:\Users\Administrator\Desktop\野途3"  # 默认存储路径，为空时需要手动输入
 
 
 # 示例：r"C:\Users\Administrator\Desktop\秀米截图"

@@ -32,7 +32,6 @@ import time
 import datetime
 import requests
 import base64
-import concurrent.futures
 from pathlib import Path
 
 # Playwright 导入
@@ -50,11 +49,8 @@ except ImportError:
 # =============================================================================
 CONFIG_FILENAME = "ach_config.json"
 DEFAULT_PROMPT = "pan camera slightly left, low angle"
-# 配置文件的默认基础名称，实际路径会在运行时根据输入文件夹动态设置
 DEFAULT_MODEL = "2"
 DEFAULT_WAIT_TIME = "180"
-DEFAULT_RETRY_COUNT = 3  # 单个任务失败后使用模型2重试的次数
-DEFAULT_MAX_ROUNDS = 3  # 总体运行的最大遍数（用于查漏补缺）
 SUPPORTED_EXTENSIONS = ['*.jpg', '*.jpeg', '*.png']
 
 # API4 配置
@@ -206,7 +202,7 @@ def ach_load_config(config_path=None):
         return default_config, False
 
 
-def ach_init_browser(playwright_instance, headless=False, storage_state_path=None):
+def ach_init_browser(playwright_instance, headless=True, storage_state_path=None):
     """初始化浏览器"""
     browser = playwright_instance.chromium.launch(headless=headless)
     if storage_state_path is None:
@@ -319,19 +315,8 @@ def ach_download_image_result(page, config):
     save_dir = config.get("banana_img_dir", os.getcwd())
     save_name = config.get("banana_save_name", "downloaded_image")
     model_suffix = config.get("banana_model", "1")
-    
-    # 检查是否需要直接保存为ST.jpg
-    final_save_name = save_name
-    if "HB" in save_name:
-        # 将HB替换为ST，直接保存为ST.jpg
-        final_save_name = save_name.replace("HB", "ST")
-        temp_png_path = os.path.join(save_dir, f"{final_save_name}_temp.png")
-        final_jpg_path = os.path.join(save_dir, f"{final_save_name}.jpg")
-        ach_log_message(f"检测到HB文件名，将直接保存为: {final_save_name}.jpg")
-    else:
-        # 保持原有命名逻辑
-        temp_png_path = os.path.join(save_dir, f"{save_name}_{model_suffix}_temp.png")
-        final_jpg_path = os.path.join(save_dir, f"{save_name}_{model_suffix}.jpg")
+    temp_png_path = os.path.join(save_dir, f"{save_name}_{model_suffix}_temp.png")
+    final_jpg_path = os.path.join(save_dir, f"{save_name}_{model_suffix}.jpg")
 
     ach_log_message(f"等待生成结果，最大等待 {wait_sec} 秒...")
     img_src = None
@@ -389,112 +374,49 @@ def ach_execute_single_task(page, config):
         return False
 
 
-def ach_main(config_path=None, storage_state_path=None, retry_count=None, max_rounds=None):
+def ach_main(config_path=None, storage_state_path=None):
     """ACH主函数"""
-    if retry_count is None:
-        retry_count = DEFAULT_RETRY_COUNT
-    if max_rounds is None:
-        max_rounds = DEFAULT_MAX_ROUNDS
-
     ach_log_message("=== ACH自动化脚本启动 ===")
     configs, headless_mode = ach_load_config(config_path)
     browser = None
-
-    current_round = 1
-    while current_round <= max_rounds:
-        ach_log_message(f"=== 开始第 {current_round}/{max_rounds} 轮处理 ===")
-
-        # 收集本轮需要处理的任务
-        if current_round > 1:
-            # 检查哪些任务还没有成功生成ST.jpg
-            config_dir = os.path.dirname(config_path) if config_path else os.path.dirname(__file__)
-            pending_configs = []
-            for config in configs:
-                save_name = config.get("banana_save_name", "")
-                first_image_path = os.path.join(config.get("banana_img_dir", ""), save_name.replace("HB", "ST") + ".jpg")
-                if not os.path.exists(first_image_path):
-                    pending_configs.append(config)
-                    ach_log_message(f"待处理(查漏): {save_name}")
-                else:
-                    ach_log_message(f"跳过(已完成): {save_name}")
-
-            if not pending_configs:
-                ach_log_message("所有任务已完成，无需继续")
-                break
-
-            configs = pending_configs
-            ach_log_message(f"本轮待处理任务数: {len(configs)}")
-
-        # 重置浏览器状态
+    try:
+        with sync_playwright() as p:
+            browser, context, page = ach_init_browser(p, headless=headless_mode, storage_state_path=storage_state_path)
+            if not ach_check_and_handle_login(page):
+                ach_log_message("未检测到登录状态，需要手动登录")
+                if headless_mode:
+                    ach_log_message("错误：无头模式下无法手动登录", level="error")
+                    return
+                ach_log_message("请在浏览器中完成登录...")
+                input(">>> 登录完成后，请按 Enter 键继续...")
+                save_path = storage_state_path if storage_state_path else STORAGE_STATE_FILE
+                context.storage_state(path=save_path)
+                ach_log_message("登录状态已保存")
+            save_path = storage_state_path if storage_state_path else STORAGE_STATE_FILE
+            context.storage_state(path=save_path)
+            total = len(configs)
+            for i, config in enumerate(configs):
+                ach_log_message(f"--- 开始执行任务 {i + 1}/{total} ---")
+                success = ach_execute_single_task(page, config)
+                if not success:
+                    ach_log_message("任务失败，尝试切换至模型1重试...")
+                    retry_config = config.copy()
+                    retry_config["banana_model"] = "1"
+                    if ach_execute_single_task(page, retry_config):
+                        ach_log_message(f"任务 {i + 1} 重试成功")
+                    else:
+                        ach_log_message(f"任务 {i + 1} 重试仍然失败", level="error")
+                ach_log_message(f"--- 任务 {i + 1} 结束 ---")
+            ach_log_message("=== 所有任务已完成 ===", show_toast=True)
+    except Exception as e:
+        ach_log_message(f"全局未捕获异常: {e}", level="error", show_toast=True)
+    finally:
         if browser:
             try:
                 browser.close()
             except:
                 pass
-            browser = None
-
-        try:
-            with sync_playwright() as p:
-                browser, context, page = ach_init_browser(p, headless=headless_mode, storage_state_path=storage_state_path)
-                if not ach_check_and_handle_login(page):
-                    ach_log_message("未检测到登录状态，需要手动登录")
-                    if headless_mode:
-                        ach_log_message("错误：无头模式下无法手动登录", level="error")
-                        return
-                    ach_log_message("请在浏览器中完成登录...")
-                    input(">>> 登录完成后，请按 Enter 键继续...")
-                    save_path = storage_state_path if storage_state_path else STORAGE_STATE_FILE
-                    context.storage_state(path=save_path)
-                    ach_log_message("登录状态已保存")
-                save_path = storage_state_path if storage_state_path else STORAGE_STATE_FILE
-                context.storage_state(path=save_path)
-                total = len(configs)
-
-                for i, config in enumerate(configs):
-                    save_name = config.get("banana_save_name", "")
-                    first_image_path = os.path.join(config.get("banana_img_dir", ""), save_name.replace("HB", "ST") + ".jpg")
-
-                    # 检查是否已完成
-                    if os.path.exists(first_image_path):
-                        ach_log_message(f"任务 {i + 1}/{total} 已完成，跳过: {save_name}")
-                        continue
-
-                    ach_log_message(f"--- 开始执行任务 {i + 1}/{total} ---")
-                    success = False
-
-                    # 使用模型2重试
-                    for retry in range(retry_count):
-                        if retry > 0:
-                            ach_log_message(f"任务失败，使用模型2重试 {retry + 1}/{retry_count}...")
-                        success = ach_execute_single_task(page, config)
-                        if success:
-                            break
-
-                    if not success:
-                        ach_log_message(f"任务 {i + 1} 重试 {retry_count} 次后仍然失败", level="error")
-
-                    # 检查是否成功生成了ST.jpg
-                    if not os.path.exists(first_image_path):
-                        ach_log_message(f"警告: 任务 {i + 1} 执行完成但未检测到ST.jpg文件: {save_name}")
-
-                    ach_log_message(f"--- 任务 {i + 1} 结束 ---")
-
-                ach_log_message(f"=== 第 {current_round} 轮处理完成 ===")
-
-        except Exception as e:
-            ach_log_message(f"第 {current_round} 轮执行异常: {e}", level="error")
-
-        finally:
-            if browser:
-                try:
-                    browser.close()
-                except:
-                    pass
-
-        current_round += 1
-
-    ach_log_message("=== 所有任务已完成 ===", show_toast=True)
-    ach_log_message("ACH程序已退出。")
+        ach_log_message("ACH程序已退出。")
 
 
 # =============================================================================
@@ -511,10 +433,9 @@ def get_output_folder_path(input_folder_path):
     return input_folder_path
 
 
-def load_previous_config(config_file_path=None):
+def load_previous_config():
     """读取上次使用的配置信息"""
-    if config_file_path is None:
-        config_file_path = os.path.join(os.path.dirname(__file__), CONFIG_FILENAME)
+    config_file_path = os.path.join(os.path.dirname(__file__), CONFIG_FILENAME)
     last_folder = ""
     last_prompt = DEFAULT_PROMPT
 
@@ -836,85 +757,17 @@ def get_user_parameters(folder_path, last_prompt):
     return headless, model, wait_time, output_folder, prompt
 
 
-def clean_invalid_config_items(config_path, hb_files):
-    """清理JSON配置中的无效配置项
-
-    Args:
-        config_path: ach_config.json 文件路径
-        hb_files: 所有有效的HB.JPG文件列表
-
-    Returns:
-        清理后的配置数据
-    """
-    # 创建有效文件的集合用于快速查找
-    valid_hb_files = set(os.path.abspath(f) for f in hb_files)
-
-    if not os.path.exists(config_path):
-        # 配置文件不存在，返回默认结构
-        return {
-            "headless": True,
-            "last_input_folder": "",
-            "banana_prompt": "",
-            "configs": []
-        }
-
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config_data = json.load(f)
-    except Exception as e:
-        log_message(f"读取配置文件失败: {e}，返回默认配置")
-        return {
-            "headless": True,
-            "last_input_folder": "",
-            "banana_prompt": "",
-            "configs": []
-        }
-
-    # 确保 configs 是列表
-    if not isinstance(config_data.get('configs'), list):
-        config_data['configs'] = []
-
-    original_count = len(config_data['configs'])
-
-    # 过滤掉 banana_ref_img1 指向不存在文件的配置项
-    valid_configs = []
-    for cfg in config_data['configs']:
-        ref_img = cfg.get("banana_ref_img1", "")
-        if ref_img:
-            ref_img_abs = os.path.abspath(ref_img)
-            if ref_img_abs in valid_hb_files:
-                valid_configs.append(cfg)
-            else:
-                log_message(f"清理无效配置项(文件不存在): {os.path.basename(ref_img)}")
-        else:
-            # 保留没有 banana_ref_img1 的配置（如果有）
-            valid_configs.append(cfg)
-
-    config_data['configs'] = valid_configs
-
-    removed_count = original_count - len(valid_configs)
-    if removed_count > 0:
-        log_message(f"已清理 {removed_count} 个无效配置项，保留 {len(valid_configs)} 个有效配置项")
-
-    # 保存清理后的配置
-    try:
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(config_data, f, ensure_ascii=False, indent=2)
-        log_message(f"配置文件已更新: {config_path}")
-    except Exception as e:
-        log_message(f"保存配置文件失败: {e}")
-
-    return config_data
-
-
 def batch_process_images():
     """主函数：批量处理图片"""
     print("=" * 50)
     print("批量图片处理工具")
     print("=" * 50)
 
+    # 1. 加载历史配置
+    last_folder, last_prompt = load_previous_config()
+
     # 2. 获取输入目录
-    default_folder = ""
+    default_folder = last_folder if last_folder else ""
     prompt_text = f"请输入要处理的图片目录路径 (留空使用上次: {default_folder}): " if default_folder else "请输入要处理的图片目录路径: "
 
     # 尝试从剪贴板获取路径
@@ -934,16 +787,12 @@ def batch_process_images():
         input_directory = clipboard_path
         log_message(f"使用剪贴板中的路径: {input_directory}")
 
-    if not input_directory and default_folder:
+    if not input_directory:
         input_directory = default_folder
 
     if not input_directory:
         log_message("错误: 目录路径不能为空")
         return
-
-    # 1. 加载历史配置（从输入目录）
-    config_path_in_folder = os.path.join(input_directory, CONFIG_FILENAME)
-    last_folder, last_prompt = load_previous_config(config_path_in_folder)
 
     try:
         if not os.path.isdir(input_directory):
@@ -952,191 +801,133 @@ def batch_process_images():
 
         log_message(f"当前工作目录: {input_directory}")
 
+        # 4. 选择执行模式
+        print("\n执行模式选择:")
+        print("1. 清空所有配置，重新开始处理")
+        print("2. 跳过已处理项目，仅处理新项目")
+
+        while True:
+            mode_choice = input("请选择执行模式 (1 或 2): ").strip()
+            if mode_choice in ["1", "2"]:
+                execution_mode = int(mode_choice)
+                break
+            print("输入无效，请输入 1 或 2")
+
         # 5. 获取运行参数
         headless, model, wait_time, output_folder, prompt = get_user_parameters(input_directory, last_prompt)
 
-        # 配置文件路径
-        config_path = os.path.join(input_directory, CONFIG_FILENAME)
+        # 6. 根据模式获取待处理图片文件
+        image_files = []
 
-        # ==================== 步骤1：扫描所有 HB.JPG 文件 ====================
-        log_message("=" * 50)
-        log_message("步骤1：扫描所有 HB.JPG 文件...")
+        if execution_mode == 1:
+            config_path = os.path.join(os.path.dirname(__file__), CONFIG_FILENAME)
+            if os.path.exists(config_path):
+                os.remove(config_path)
+                log_message("已清空ach配置文件")
 
-        hb_files = glob.glob(os.path.join(input_directory, "**", "*HB.jpg"), recursive=True)
-        hb_files = sorted(hb_files)
+            image_files = get_image_files(input_directory)
 
-        log_message(f"找到 {len(hb_files)} 个 HB.JPG 文件")
+        elif execution_mode == 2:
+            config_path = os.path.join(os.path.dirname(__file__), CONFIG_FILENAME)
+            if os.path.exists(config_path):
+                os.remove(config_path)
+                log_message("已清空ach配置文件")
 
-        if not hb_files:
-            log_message("未找到任何 HB.JPG 文件，程序退出")
+            savexiumi_config_path = os.path.join(input_directory, "savexiumi_config.json")
+            if not os.path.exists(savexiumi_config_path):
+                log_message(f"错误: 找不到savexiumi_config.json文件: {savexiumi_config_path}")
+                return
+
+            try:
+                with open(savexiumi_config_path, 'r', encoding='utf-8') as f:
+                    savexiumi_config = json.load(f)
+            except Exception as e:
+                log_message(f"读取savexiumi_config.json失败: {e}")
+                return
+
+            items = savexiumi_config.get("items", [])
+            if not items:
+                log_message("savexiumi_config.json中没有items数据")
+                return
+
+            log_message(f"从savexiumi_config.json读取到 {len(items)} 个items")
+
+            skipped_count = 0
+            error_count = 0
+
+            for item in items:
+                try:
+                    first_image_relative = item.get("首图路径", "")
+                    poster_relative = item.get("海报路径", "")
+
+                    if not first_image_relative or not poster_relative:
+                        log_message(f"跳过item: 首图路径或海报路径为空")
+                        skipped_count += 1
+                        continue
+
+                    first_image_path = os.path.join(input_directory, first_image_relative)
+                    poster_path = os.path.join(input_directory, poster_relative)
+
+                    if os.path.exists(first_image_path):
+                        log_message(f"跳过已处理项目: {os.path.basename(first_image_relative)}")
+                        skipped_count += 1
+                    else:
+                        if os.path.exists(poster_path):
+                            image_files.append(poster_path)
+                            log_message(f"待处理: {os.path.basename(poster_path)}")
+                        else:
+                            log_message(f"错误: 海报文件不存在: {poster_relative}")
+                            error_count += 1
+
+                except Exception as e:
+                    log_message(f"处理item时出错: {e}")
+                    error_count += 1
+                    continue
+
+            log_message(f"过滤完成: 跳过 {skipped_count} 个已处理项目，找到 {len(image_files)} 个待处理项目，错误 {error_count} 个")
+
+        if not image_files:
+            log_message("没有需要处理的项目")
             return
 
-        # ==================== 步骤2：预处理 JSON 清理 ====================
-        log_message("=" * 50)
-        log_message("步骤2：预处理 JSON 清理...")
+        log_message(f"开始处理 {len(image_files)} 张图片...")
 
-        config_data = clean_invalid_config_items(config_path, hb_files)
+        # 7. 为每张图片生成提示词并实时保存配置
+        config_path = os.path.join(os.path.dirname(__file__), CONFIG_FILENAME)
+        processed_count = 0
 
-        # 建立现有提示词的映射表
-        existing_prompts = {}
-        for cfg in config_data.get("configs", []):
-            ref_img = cfg.get("banana_ref_img1", "")
-            if ref_img:
-                existing_prompts[os.path.abspath(ref_img)] = cfg.get("banana_prompt", "")
+        for i, image_path in enumerate(image_files, 1):
+            log_message(f"正在处理第 {i}/{len(image_files)} 张图片...")
+            prompt_text = generate_prompt_for_image(image_path)
 
-        log_message(f"已加载 {len(existing_prompts)} 个已有提示词")
-
-        # ==================== 步骤3：阶段1 - 生成提示词（并发API） ====================
-        log_message("=" * 50)
-        log_message("步骤3：阶段1 - 生成提示词（并发API）...")
-
-        # 筛选出需要处理的文件：有HB.JPG + 无ST.JPG + 无JSON提示词
-        need_api_call = []
-        skipped_completed = []  # 已完成（有ST.JPG）的文件
-        skipped_has_prompt = []  # 有提示词但无ST.JPG的文件
-
-        for hb_file in hb_files:
-            hb_file_abs = os.path.abspath(hb_file)
-
-            # 检查对应的 ST.JPG 是否已存在
-            hb_dir = os.path.dirname(hb_file)
-            hb_name = os.path.basename(hb_file)
-            st_name = hb_name.replace("HB.jpg", "ST.jpg").replace("HB.jpeg", "ST.jpeg").replace("HB.png", "ST.png")
-            st_path = os.path.join(hb_dir, st_name)
-
-            if os.path.exists(st_path):
-                # ST.JPG 已存在，说明已完成，直接跳过（无论JSON中是否有提示词）
-                skipped_completed.append(os.path.basename(hb_file))
-                continue
-
-            # ST.JPG 不存在，检查是否有提示词
-            if hb_file_abs not in existing_prompts or not existing_prompts[hb_file_abs]:
-                need_api_call.append(hb_file)
+            if prompt_text is not None:
+                save_config_item(image_path, prompt_text, config_path, input_directory, headless, model, wait_time)
+                processed_count += 1
+                log_message(f"提示词: {prompt_text[:50]}...")
+                print("-" * 30)
             else:
-                skipped_has_prompt.append(os.path.basename(hb_file))
+                log_message(f"跳过图片: {os.path.basename(image_path)}")
+                print("-" * 30)
 
-        log_message(f"需要生成提示词的文件: {len(need_api_call)} 个")
-        log_message(f"已有ST.JPG（已完成）: {len(skipped_completed)} 个")
-        log_message(f"已有提示词但无ST.JPG: {len(skipped_has_prompt)} 个")
+        if processed_count == 0:
+            log_message("没有成功处理任何图片，程序结束")
+            return
 
-        if need_api_call:
-            log_message(f"开始处理 {len(need_api_call)} 张图片(需要API调用)...")
-            log_message(f"使用并发处理，最大并发数: 10")
+        log_message(f"总共成功处理 {processed_count} 张图片")
+        log_message("配置文件已实时更新完成!")
+        print("=" * 50)
 
-            # 并发处理图片
-            results = {}
-            max_workers = min(10, len(need_api_call))
+        # 清理配置文件中的提示词
+        clean_config_prompts(config_path)
 
-            def process_image(image_path):
-                """处理单个图片，返回(图片路径, 提示词)"""
-                try:
-                    log_message(f"并发处理: {os.path.basename(image_path)}")
-                    prompt_text = generate_prompt_for_image(image_path)
-                    return image_path, prompt_text
-                except Exception as e:
-                    log_message(f"并发处理失败: {os.path.basename(image_path)} - {e}")
-                    return image_path, None
-
-            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                future_to_image = {executor.submit(process_image, img_path): img_path for img_path in need_api_call}
-                for future in concurrent.futures.as_completed(future_to_image):
-                    image_path = future_to_image[future]
-                    try:
-                        img_path, prompt_text = future.result()
-                        if prompt_text:
-                            results[img_path] = prompt_text
-                            log_message(f"已完成: {os.path.basename(img_path)} (提示词: {prompt_text[:30]}...)")
-                        else:
-                            log_message(f"跳过(生成失败): {os.path.basename(img_path)}")
-                    except Exception as e:
-                        log_message(f"处理 {os.path.basename(image_path)} 时出错: {e}")
-
-            # 保存结果
-            for image_path, prompt_text in results.items():
-                if prompt_text:
-                    save_config_item(image_path, prompt_text, config_path, input_directory, headless, model, wait_time)
-                    print("-" * 30)
-
-            if results:
-                log_message(f"API调用完成，共处理 {len(results)} 张图片")
-                log_message("配置文件已实时更新完成!")
-                print("=" * 50)
-
-                clean_config_prompts(config_path)
-        else:
-            log_message("所有文件都已有提示词，跳过API调用阶段")
-
-        # ==================== 步骤4：阶段2 - 生成图片（Playwright） ====================
-        log_message("=" * 50)
-        log_message("步骤4：阶段2 - 生成图片（Playwright）...")
-
-        # 重新加载配置文件（包含新生成的提示词）
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config_data = json.load(f)
-
-        # 重建提示词映射
-        existing_prompts = {}
-        for cfg in config_data.get("configs", []):
-            ref_img = cfg.get("banana_ref_img1", "")
-            if ref_img:
-                existing_prompts[os.path.abspath(ref_img)] = cfg.get("banana_prompt", "")
-
-        # 筛选出有HB.JPG但无ST.JPG的文件
-        need_image_generate = []
-        for hb_file in hb_files:
-            # 构造对应的ST.JPG路径（同目录，HB替换为ST）
-            hb_dir = os.path.dirname(hb_file)
-            hb_name = os.path.basename(hb_file)
-            st_name = hb_name.replace("HB.jpg", "ST.jpg").replace("HB.jpeg", "ST.jpeg").replace("HB.png", "ST.png")
-            st_path = os.path.join(hb_dir, st_name)
-
-            if not os.path.exists(st_path):
-                # 检查是否有对应的提示词
-                hb_file_abs = os.path.abspath(hb_file)
-                if hb_file_abs in existing_prompts and existing_prompts[hb_file_abs]:
-                    need_image_generate.append((hb_file, existing_prompts[hb_file_abs]))
-                    log_message(f"待处理(需生成ST.JPG): {os.path.basename(hb_file)}")
-                else:
-                    log_message(f"警告: {os.path.basename(hb_file)} 没有ST.JPG且无提示词，跳过")
-            else:
-                log_message(f"跳过(已有ST.JPG): {os.path.basename(hb_file)}")
-
-        log_message(f"需要生成ST.JPG的文件: {len(need_image_generate)} 个")
-
-        if need_image_generate:
-            # 构建任务列表
-            config_data = {
-                "headless": headless,
-                "last_input_folder": input_directory,
-                "banana_prompt": "",
-                "configs": []
-            }
-
-            for poster_path, prompt_text in need_image_generate:
-                config_data["configs"].append(create_config_item(poster_path, prompt_text, input_directory, model, wait_time))
-                log_message(f"已添加配置: {os.path.basename(poster_path)}")
-
-            # 保存配置文件
-            with open(config_path, 'w', encoding='utf-8') as f:
-                json.dump(config_data, f, ensure_ascii=False, indent=2)
-            log_message(f"配置添加完成，共 {len(need_image_generate)} 个任务")
-            print("=" * 50)
-
-            clean_config_prompts(config_path)
-
-            log_message("开始执行 ach.py(生成图片模式)...")
-            try:
-                ach_main(config_path=config_path)
-                log_message("生成图片模式任务执行完成!")
-            except Exception as e:
-                log_message(f"执行 ach.py 时出错: {e}")
-                return
-        else:
-            log_message("所有ST.JPG都已存在，跳过图片生成阶段")
-
-        # ==================== 步骤5：完成后重命名 ====================
-        log_message("=" * 50)
-        log_message("步骤5：完成后重命名...")
+        # 执行 ach.py
+        log_message("开始执行 ach.py...")
+        try:
+            ach_main(config_path=CONFIG_FILENAME)
+            log_message("所有任务执行完成!")
+        except Exception as e:
+            log_message(f"执行 ach.py 时出错: {e}")
+            return
 
         # 重命名处理后的文件
         log_message("开始重命名处理后的文件...")
@@ -1145,9 +936,6 @@ def batch_process_images():
             log_message("文件重命名完成!")
         except Exception as e:
             log_message(f"文件重命名时出错: {e}")
-
-        log_message("=" * 50)
-        log_message("所有处理步骤完成!")
 
     except Exception as e:
         log_message(f"程序执行出错: {e}")

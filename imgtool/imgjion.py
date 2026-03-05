@@ -366,6 +366,98 @@ def select_groups_interactive(groups: List[Tuple[str, List[Path]]]) -> List[Tupl
             return []
 
 
+def select_images_interactive(files: List[Path]) -> List[Path]:
+    """
+    交互式选择要合并的图片
+
+    Args:
+        files: 所有图片文件列表
+
+    Returns:
+        用户选择的图片
+    """
+    if len(files) <= 2:
+        # 只有 1-2 张图片，直接返回
+        return files
+
+    print("\n" + "═" * 60)
+    print(f"   找到 {len(files)} 张图片，请选择要合并的图片")
+    print("═" * 60)
+    print()
+
+    # 显示所有图片
+    for i, f in enumerate(files, 1):
+        print(f"  [{i}] {f.name}")
+
+    print()
+    print("═" * 60)
+    print("提示：")
+    print("  - 输入单个序号选择（如：1）")
+    print("  - 输入多个序号用逗号分隔（如：1,2,3,5）")
+    print("  - 输入范围（如：1-5）")
+    print("  - 输入 a 选择全部")
+    print("  - 输入 q 退出")
+    print("  - 输入 1,3,5-7 混合选择")
+    print("═" * 60)
+
+    while True:
+        try:
+            choice = input("\n请选择：").strip().lower()
+
+            if not choice:
+                continue
+
+            if choice == 'q':
+                return []
+
+            if choice == 'a':
+                return files
+
+            # 解析选择
+            selected_indices = set()
+            valid = True
+
+            for c in choice.split(','):
+                c = c.strip()
+                if '-' in c:
+                    # 范围选择
+                    parts = c.split('-')
+                    if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                        start, end = int(parts[0]), int(parts[1])
+                        if 1 <= start <= end <= len(files):
+                            selected_indices.update(range(start - 1, end))
+                        else:
+                            print(f"❌ 无效的范围：{c}")
+                            valid = False
+                            break
+                    else:
+                        print(f"❌ 无效的范围：{c}")
+                        valid = False
+                        break
+                elif c.isdigit():
+                    idx = int(c)
+                    if 1 <= idx <= len(files):
+                        selected_indices.add(idx - 1)
+                    else:
+                        print(f"❌ 无效的序号：{idx}")
+                        valid = False
+                        break
+                else:
+                    print(f"❌ 无效的输入：{c}")
+                    valid = False
+                    break
+
+            if valid and selected_indices:
+                return [files[i] for i in sorted(selected_indices)]
+
+        except KeyboardInterrupt:
+            print("\n👋 中断，再见！")
+            return []
+        except EOFError:
+            print("\n👋 再见！")
+            return []
+
+
 def process_images(files: List[Path], output_dir: Path = None, output_prefix: Optional[str] = None, interactive: bool = False) -> List[Path]:
     """
     处理图片拼接
@@ -404,10 +496,27 @@ def process_images(files: List[Path], output_dir: Path = None, output_prefix: Op
 
     for i, (prefix, group) in enumerate(groups, 1):
         print(f"\n第 {i} 组：{prefix}  ({len(group)} 个文件)")
+        for j, f in enumerate(group, 1):
+            print(f"    [{j}] {f.name}")
 
+    # 如果有多组，让用户确认要合并哪些组
+    if len(groups) > 1 and interactive:
+        print("\n" + "═" * 60)
+        print("请选择要合并的组（逗号分隔，如：1,2）")
+        choice = input("选择（默认全部）：").strip()
+        if choice:
+            indices = []
+            for c in choice.split(','):
+                c = c.strip()
+                if c.isdigit() and 1 <= int(c) <= len(groups):
+                    indices.append(int(c) - 1)
+            if indices:
+                groups = [groups[i] for i in indices]
+            else:
+                print("无效的选择，使用全部组")
+
+    for i, (prefix, group) in enumerate(groups, 1):
         # 确定输出文件名前缀
-        # 如果传入了 output_prefix，使用传入的
-        # 否则从分组文件自动提取前缀
         prefix_for_output = output_prefix if output_prefix else prefix
 
         # 拼接
@@ -443,30 +552,118 @@ def interactive_mode():
                 print("\n👋 再见！")
                 break
 
-            # 解析路径
+            # 解析路径 - 支持引号包裹的带空格路径
+            user_input = user_input.strip().strip('"').strip("'")
+            path = Path(user_input)
+
             files = []
-            for f in user_input.split():
-                path = Path(f.strip().strip('"').strip("'"))
-                if path.exists() and path.suffix.lower() in SUPPORTED_EXTS:
+            if path.exists():
+                if path.suffix.lower() in SUPPORTED_EXTS:
+                    # 是图片文件
                     files.append(path)
-                else:
-                    print(f"警告：跳过无效文件 - {f}")
+                elif path.is_dir():
+                    # 是文件夹，扫描里面的图片
+                    print(f"📂 检测到文件夹，扫描中...")
+                    # 使用 set 去重（Windows 文件系统不区分大小写）
+                    seen_paths = set()
+                    for ext in SUPPORTED_EXTS:
+                        for f in path.glob(f"*{ext}"):
+                            if f not in seen_paths:
+                                seen_paths.add(f)
+                                files.append(f)
+                        for f in path.glob(f"*{ext.upper()}"):
+                            if f not in seen_paths:
+                                seen_paths.add(f)
+                                files.append(f)
+                    if files:
+                        print(f"  找到 {len(files)} 张图片")
+                    else:
+                        print(f"  ❌ 未找到图片文件")
+            else:
+                # 尝试分割多个路径（按空格）
+                for f in user_input.split():
+                    f = f.strip().strip('"').strip("'")
+                    if not f:
+                        continue
+                    path = Path(f)
+                    if path.exists() and path.suffix.lower() in SUPPORTED_EXTS:
+                        files.append(path)
+                    else:
+                        print(f"警告：跳过无效文件 - {f}")
 
             if not files:
                 print("❌ 未找到有效的图片文件。")
                 continue
 
-            # 使用当前目录作为输出目录
-            output_dir = Path.cwd()
+            # 按前缀分组，只保留符合"前缀 + 数字"模式的文件
+            groups = detect_image_groups(files)
 
-            try:
-                result_paths = process_images(files, output_dir)
-                print("\n✅ 全部完成！")
-                print(f"\n输出文件位置：")
-                for p in result_paths:
-                    print(f"  - {p}")
-            except Exception as e:
-                print(f"\n❌ 错误：{e}")
+            if not groups:
+                print("❌ 没有找到符合'前缀 + 编号'模式的图片。")
+                print("   文件名需要包含数字结尾，如：主图_01.jpg, 详情_02.png")
+                continue
+
+            # 显示所有分组（简化显示）
+            print("\n" + "═" * 60)
+            print(f"   找到 {len(groups)} 个分组:")
+            print("═" * 60)
+
+            for i, (prefix, group_files) in enumerate(groups, 1):
+                print(f"  [{i}] {prefix}  ({len(group_files)} 张)")
+
+            print("\n" + "═" * 60)
+            print("请选择要合并的分组：")
+            print("  - 直接回车：自动合并\"详情\"开头的分组")
+            print("  - 输入序号选择单个分组（如：1）")
+            print("  - 输入多个序号用逗号分隔（如：1,2）")
+            print("  - 输入 a 选择全部")
+            print("  - 输入 q 退出")
+            print("═" * 60)
+
+            choice = input("\n你的选择：").strip().lower()
+
+            # 默认选择：回车时自动选择"详情"开头的分组，没有则选第一个
+            if not choice:
+                # 查找"详情"开头的分组
+                detail_indices = [i for i, (prefix, _) in enumerate(groups) if prefix.startswith("详情")]
+                if detail_indices:
+                    selected_groups = [groups[i] for i in detail_indices]
+                    print(f"\n✅ 已选择：详情 ({len(detail_indices)} 张)")
+                else:
+                    # 没有"详情"分组，默认选第一个
+                    selected_groups = [groups[0]]
+                    print(f"\n✅ 已选择：{groups[0][0]} ({len(groups[0][1])} 张)")
+            elif choice == 'q':
+                continue
+            elif choice == 'a':
+                selected_groups = groups
+            else:
+                indices = []
+                for c in choice.split(','):
+                    c = c.strip()
+                    if c.isdigit() and 1 <= int(c) <= len(groups):
+                        indices.append(int(c) - 1)
+                if indices:
+                    selected_groups = [groups[i] for i in indices]
+                else:
+                    print("无效的选择")
+                    continue
+
+            # 输出目录：保存到用户输入的文件夹
+            output_dir = path.parent if path.is_file() else path
+            print(f"\n📁 输出目录：{output_dir}")
+
+            # 合并选中的分组
+            output_files = []
+            for prefix, group_files in selected_groups:
+                output_path = stitch_images_vertically(group_files, output_dir, output_prefix=prefix)
+                output_files.append(output_path)
+                print(f"  → {output_path.name}")
+
+            print("\n✅ 全部完成！")
+            print(f"\n输出文件位置：")
+            for p in output_files:
+                print(f"  - {p}")
 
         except KeyboardInterrupt:
             print("\n\n👋 中断，再见！")

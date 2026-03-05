@@ -66,6 +66,9 @@ LOGIN_SELECTOR = "#global > div.main-container > div.side-bar > ul > div.channel
 TXT_DIR = Path(r"C:\Users\Administrator\Desktop\公众号文章\txt")
 KEYWORD_FILE_PREFIX = "秘境"
 
+# 已处理关键词记录文件路径（用于防止幻觉）- 放在公众号文章目录下
+PROCESSED_KEYWORDS_PATH = Path(r"C:\Users\Administrator\Desktop\公众号文章\downloaded_keywords.txt")
+
 
 def ensure_download_directory(directory: Path) -> None:
     """确保下载目录存在，不存在则创建。"""
@@ -106,13 +109,54 @@ def sanitize_filename(keyword: str) -> str:
     return filename
 
 
-def is_keyword_processed(keyword: str, download_dir: Path) -> bool:
-    """检查下载目录中是否已存在以该关键词命名的图片。"""
+def is_keyword_processed(keyword: str, download_dir: Path, processed_keywords: set = None) -> bool:
+    """检查关键词是否已处理。
+
+    采用混合检测模式：
+    1. 优先检查记录文件（最准确）
+    2. 退而求其次检查文件名（向后兼容）
+
+    Args:
+        keyword: 关键词
+        download_dir: 下载目录
+        processed_keywords: 已处理关键词集合（从记录文件加载）
+
+    Returns:
+        bool: 是否已处理
+    """
+    # 优先检查记录文件（如果有加载）
+    if processed_keywords is not None and keyword in processed_keywords:
+        return True
+
+    # 退而求其次：检查文件名（向后兼容旧文件）
     sanitized = sanitize_filename(keyword)
     for ext in [".jpg", ".jpeg", ".png", ".webp"]:
         if (download_dir / f"{sanitized}{ext}").exists():
             return True
+
     return False
+
+
+def load_processed_keywords(record_path: Path) -> set:
+    """从记录文件加载已处理的关键词。"""
+    if record_path.exists():
+        try:
+            content = record_path.read_text(encoding="utf-8")
+            keywords = set(line.strip() for line in content.splitlines() if line.strip())
+            print(f"已加载 {len(keywords)} 个已处理关键词记录")
+            return keywords
+        except Exception as e:
+            print(f"加载记录文件失败：{e}")
+    return set()
+
+
+def save_processed_keyword(record_path: Path, keyword: str) -> None:
+    """保存已处理的关键词到记录文件。"""
+    try:
+        with open(record_path, "a", encoding="utf-8") as f:
+            f.write(keyword + "\n")
+    except Exception as e:
+        print(f"保存关键词记录失败：{e}")
 
 
 def search_keyword(page, keyword: str) -> None:
@@ -476,6 +520,9 @@ def main():
     """主流程：批量处理txt文件中的关键词，循环搜索并下载图片。"""
     ensure_download_directory(DOWNLOAD_DIR)
 
+    # 加载已处理关键词记录（防止幻觉）
+    processed_keywords = load_processed_keywords(PROCESSED_KEYWORDS_PATH)
+
     keyword_files = find_keyword_files(TXT_DIR, KEYWORD_FILE_PREFIX)
     
     if not keyword_files:
@@ -483,21 +530,38 @@ def main():
         print(f"请检查目录: {TXT_DIR}")
         return
 
-    all_keywords = []
+    all_keywords_raw = []
     for file_path in keyword_files:
         keywords = extract_keywords_from_file(file_path)
         print(f"\n从文件 '{file_path.name}' 中提取到 {len(keywords)} 个关键词")
-        all_keywords.extend(keywords)
+        all_keywords_raw.extend(keywords)
+
+    # 去重：保持原有顺序，删除重复关键词
+    seen = set()
+    all_keywords = []
+    for kw in all_keywords_raw:
+        if kw not in seen:
+            seen.add(kw)
+            all_keywords.append(kw)
 
     if not all_keywords:
         print("未从任何文件中提取到关键词")
         return
 
-    print(f"\n总计找到 {len(all_keywords)} 个关键词待处理")
+    print(f"\n总计找到 {len(all_keywords)} 个关键词待处理（已自动去重）")
+    if len(all_keywords_raw) != len(all_keywords):
+        print(f"提示：原始提取 {len(all_keywords_raw)} 个，去重后剩余 {len(all_keywords)} 个")
+
+    # 统计已记录的关键词
+    already_recorded = sum(1 for kw in all_keywords if kw in processed_keywords)
+    if already_recorded > 0:
+        print(f"其中 {already_recorded} 个关键词已有记录，将自动跳过")
+
     print(f"=" * 50)
     print(f"小红书图片批量下载工具")
     print(f"关键词来源: {TXT_DIR}")
     print(f"下载目录: {DOWNLOAD_DIR}")
+    print(f"记录文件：{PROCESSED_KEYWORDS_PATH}")
     print(f"=" * 50)
 
     processed_count = 0
@@ -513,7 +577,7 @@ def main():
             
             start_index = 0
             for i, keyword in enumerate(all_keywords):
-                if not is_keyword_processed(keyword, DOWNLOAD_DIR):
+                if not is_keyword_processed(keyword, DOWNLOAD_DIR, processed_keywords):
                     start_index = i
                     break
             
@@ -541,7 +605,7 @@ def main():
             for i, keyword in enumerate(all_keywords, 1):
                 print(f"\n[{i}/{len(all_keywords)}] 正在处理关键词: {keyword}")
 
-                if is_keyword_processed(keyword, DOWNLOAD_DIR):
+                if is_keyword_processed(keyword, DOWNLOAD_DIR, processed_keywords):
                     print(f"  → 图片已存在，跳过")
                     skipped_count += 1
                     continue
@@ -575,6 +639,10 @@ def main():
                     if download_image(image_url, save_path):
                         print(f"  ✓ 图片已保存: {save_path}")
                         downloaded_count += 1
+                        # 保存到记录文件
+                        save_processed_keyword(PROCESSED_KEYWORDS_PATH, keyword)
+                        # 添加到内存中的集合
+                        processed_keywords.add(keyword)
                     else:
                         print(f"  ✗ 图片下载失败")
                 else:

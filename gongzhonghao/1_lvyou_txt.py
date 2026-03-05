@@ -38,7 +38,7 @@ DEFAULT_MODEL = "gemini-3-pro"
 
 MAX_WORKERS = 7
 OUTPUT_DIR = r"C:\Users\Administrator\Desktop\公众号文章\txt"
-LVYOU_DIR = r"c:\Users\Administrator\Desktop\OpsDeck\src\opsdeck\gongzhonghao\gongzhonghao\lvyou"
+LVYOU_DIR = r"C:\Users\Administrator\Desktop\opsdeck2\gongzhonghao\lvyou"
 
 PART1_PROMPT = """请根据提供的下方旅游部分的内容，撰写一篇兼具种草感与高端感的游记文章。
  Constraints & Tone

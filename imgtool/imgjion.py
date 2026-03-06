@@ -260,9 +260,10 @@ def stitch_images_vertically(images: List[Path], output_dir: Path, output_prefix
     # 从上往下粘贴
     y_offset = 0
     for img in img_objects:
-        # 居中放置（如果图片宽度小于最大宽度）
-        x_offset = (max_width - img.width) // 2
-        result.paste(img, (x_offset, y_offset))
+        # 强制缩放到最大宽度
+        if img.width < max_width:
+            img = img.resize((max_width, int(img.height * max_width / img.width)), Image.Resampling.LANCZOS)
+        result.paste(img, (0, y_offset))
         y_offset += img.height
 
     # 生成输出文件名
